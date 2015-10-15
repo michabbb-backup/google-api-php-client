@@ -330,11 +330,23 @@ class Google_Client
   {
     $subscriber = null;
     $authIdentifier = null;
+
+    // if we end up needing to make an HTTP request to retrieve credentials, we
+    // can use our existing one, but we need to throw exceptions so the error
+    // bubbles up.
+    $authHttp = clone $http;
+    $authHttp->setDefaultOption('exceptions', true);
+
+    // These conditionals represent the decision tree for authentication
+    //   1.  Check for Application Default Credentials
+    //   2.  Check for API Key
+    //   3a. Check for an Access Token
+    //   3b. If access token exists but is expired, try to refresh it
     if ($this->config->get('use_application_default_credentials')) {
       $scopes = $this->prepareScopes();
       $subscriber = ApplicationDefaultCredentials::getFetcher(
           $scopes,
-          clone $http,
+          $authHttp,
           array(),
           $this->cache
       );
@@ -350,7 +362,8 @@ class Google_Client
         if (isset($token['refresh_token'])) {
           $subscriber = $this->createUserRefreshCredentials(
               $scopes,
-              $token['refresh_token']
+              $token['refresh_token'],
+              $authHttp
           );
           $authIdentifier = 'google_auth';
         }
@@ -1006,8 +1019,11 @@ class Google_Client
     return new Client($options);
   }
 
-  private function createUserRefreshCredentials($scope, $refreshToken)
-  {
+  private function createUserRefreshCredentials(
+      $scope,
+      $refreshToken,
+      ClientInterface $http = null
+  ) {
     $creds = array_filter(
         array(
           'client_id' => $this->getClientId(),
@@ -1020,7 +1036,7 @@ class Google_Client
         new UserRefreshCredentials($scope, $creds),
         [],
         $this->getCache(),
-        clone $this->getHttpClient()
+        $httpClient
     );
   }
 }
