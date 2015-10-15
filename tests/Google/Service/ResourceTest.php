@@ -188,7 +188,9 @@ class Google_Service_ResourceTest extends PHPUnit_Framework_TestCase
       )
     );
     $request = $resource->call("testMethod", array(array()));
-    $this->assertEquals('/etc/ca-certificates.crt', $this->client->getHttpClient()->getDefaultOption('verify'));
+    $this->assertEquals(
+        '/etc/ca-certificates.crt',
+        $this->client->getHttpClient()->getDefaultOption('verify')
+    );
   }
-
 }

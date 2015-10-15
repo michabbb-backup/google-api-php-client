@@ -31,10 +31,18 @@ the list below in order to upgrade to the latest version:
  `Google_Auth`-related functionality has been removed:
     1. Removed methods `Google_Client::getAuth` and `Google_Client::setAuth`
     1. Removed `Google_Auth_Abstract`
+<<<<<<< HEAD
     1. Removed `Google_Auth_AppIdentity`. This will be added to [`google/auth`][Google Auth] (TBD).
     1. Removed `Google_Auth_AssertionCredentials`. Use `Google_Client::setAuthConfig` instead.
     1. Removed `Google_Auth_ComputeEngine`. This is now supported in
     [`google/auth`][Google Auth GCE], and will work automatically when
+=======
+    1. Removed `Google_Auth_AppIdentity`. This is now supported in [`google/auth`][Google Auth AppIdentity]
+    and is used automatically when `Google_Client::useApplicationDefaultCredentials` is called.
+    1. Removed `Google_Auth_AssertionCredentials`. Use `Google_Client::setAuthConfig` instead.
+    1. Removed `Google_Auth_ComputeEngine`. This is now supported in
+    [`google/auth`][Google Auth GCE], and is used automatically when
+>>>>>>> v2-rcb-1
     `Google_Client::useApplicationDefaultCredentials` is called.
     1. Removed `Google_Auth_Exception`
     1. Removed `Google_Auth_LoginTicket`. Calls to `Google_Client::verifyIdToken` now returns
@@ -76,5 +84,6 @@ the list below in order to upgrade to the latest version:
 [Google Auth GCE]: https://github.com/google/google-auth-library-php/blob/master/src/GCECredentials.php
 [Google Auth OAuth2]: https://github.com/google/google-auth-library-php/blob/master/src/OAuth2.php
 [Google Auth Simple]: https://github.com/google/google-auth-library-php/blob/master/src/Simple.php
+[Google Auth AppIdentity]: https://github.com/google/google-auth-library-php/blob/master/src/AppIdentityCredentials.php
 [Google Auth CacheInterface]: https://github.com/google/google-auth-library-php/blob/master/src/CacheInterface.php
 [Firebase JWT]: https://github.com/firebase/php-jwt

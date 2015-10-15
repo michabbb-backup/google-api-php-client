@@ -7,7 +7,7 @@
     "license": "Apache-2.0",
     "require": {
         "php": ">=5.4",
-        "google/auth": "dev-master",
+        "google/auth": "v0.2-alpha",
         "monolog/monolog": "^1.17",
         "phpseclib/phpseclib": "~2.0",
         "guzzlehttp/guzzle": "5.2.*"
