@@ -334,7 +334,7 @@ class Google_Client
       $scopes = $this->prepareScopes();
       $subscriber = ApplicationDefaultCredentials::getFetcher(
           $scopes,
-          null,
+          clone $http,
           array(),
           $this->cache
       );
