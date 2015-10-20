@@ -7,9 +7,46 @@ Google API Client Upgrade Guide
 The Google API Client for PHP has undergone major internal changes in `2.0`. Please read through
 the list below in order to upgrade to the latest version:
 
- - `PHP 5.4` is now the minimum supported PHP version (previously `PHP 5.2`).
- - [`Guzzle 5`][Guzzle 5] is used for all HTTP Requests. As a result, all `Google_IO`-related
- functionality and `Google_Http`-related functionality has been changed or removed:
+## Installation now uses `Composer`
+
+**Before**
+
+The project was cloned in your project and you would run the autoloader from wherever:
+
+```php
+// the autoload file was included
+require_once 'google-api-php-client/src/Google/autoload.php'; // or wherever autoload.php is located
+// OR classes were added one-by-one
+require_once 'Google/Client.php';
+require_once 'Google/Service/YouTube.php';
+```
+
+**After**
+
+This library now uses [composer](https://getcomposer.org) (We suggest installing
+composer [globally](http://symfony.com/doc/current/cookbook/composer.html)). Add this library by
+running the following in the root of your project:
+
+```
+$ composer require google/apiclient:~2.0
+```
+
+This will install this library and generate an autoload file in `vendor/autoload.php` in the root
+of your project. You can now include this library with the following code:
+
+```php
+require_once 'vendor/autoload.php';
+```
+
+## PHP 5.4 is now the minimum supported PHP version
+
+This was previously `PHP 5.2`. If you still need to use PHP 5.2, please continue to use
+the [v1-master](https://github.com/google/google-api-php-client/tree/v1-master) branch.
+
+## [`Guzzle 5`][Guzzle 5] is used for all HTTP Requests.
+
+As a result, all `Google_IO`-related functionality and `Google_Http`-related functionality has been
+changed or removed:
     1. Removed `Google_Http_Request`
     1. Removed `Google_IO_Abstract`, `Google_IO_Exception`, `Google_IO_Curl`, and `Google_IO_Stream`
     1. Removed methods `Google_Client::getIo` and `Google_Client::setIo`
@@ -17,6 +54,9 @@ the list below in order to upgrade to the latest version:
     1. Added `Google_Http_Pool` for HTTP Pooling via Guzzle 5
     1. Added `Google_Client::getHttpClient` and `Google_Client::setHttpClient` for getting and
     setting the Guzzle 5 `GuzzleHttp\ClientInterface` object.
+
+## Other Changes
+
  - [`PSR 3`][PSR 3] `LoggerInterface` is now supported, and [Monolog][Monolog] is used for all
  logging. As a result, all `Google_Logger`-related functionality has been removed:
     1. Removed `Google_Logger_Abstract`, `Google_Logger_Exception`, `Google_Logger_File`,
