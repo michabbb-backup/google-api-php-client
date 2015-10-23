@@ -131,12 +131,12 @@ class Google_Http_MediaFileUpload
 
     $request = new Request(
         'PUT',
-        $this->resumeUri,
+        $resumeUri,
         $headers,
         Stream::factory($chunk)
     );
 
-    $this->makePutRequest($request);
+    return $this->makePutRequest($request);
   }
 
   /**
@@ -283,7 +283,11 @@ class Google_Http_MediaFileUpload
 
   public function getResumeUri()
   {
-    return ( $this->resumeUri !== null ? $this->resumeUri : $this->fetchResumeUri() );
+    if (is_null($this->resumeUri)) {
+      $this->resumeUri = $this->fetchResumeUri();
+    }
+
+    return $this->resumeUri;
   }
 
   private function fetchResumeUri()

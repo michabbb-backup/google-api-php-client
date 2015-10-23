@@ -18,8 +18,10 @@
 use Google\Auth\ApplicationDefaultCredentials;
 use Google\Auth\AuthTokenFetcher;
 use Google\Auth\CacheInterface;
+use Google\Auth\CredentialsLoader;
 use Google\Auth\OAuth2;
 use Google\Auth\ScopedAccessToken;
+use Google\Auth\ServiceAccountCredentials;
 use Google\Auth\Simple;
 use Google\Auth\UserRefreshCredentials;
 use GuzzleHttp\Client;
@@ -38,7 +40,7 @@ class Google_Client
   const LIBVER = "2.0.0-alpha";
   const USER_AGENT_SUFFIX = "google-api-php-client/";
   const OAUTH2_REVOKE_URI = 'https://accounts.google.com/o/oauth2/revoke';
-  const OAUTH2_TOKEN_URI = 'https://www.googleapis.com/oauth2/v3/token';
+  const OAUTH2_TOKEN_URI = 'https://www.googleapis.com/oauth2/v4/token';
   const OAUTH2_AUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
   const API_BASE_PATH = 'https://www.googleapis.com';
 
@@ -148,8 +150,6 @@ class Google_Client
    */
   public function authenticate($code)
   {
-    trigger_error('use Google_Client::fetchAccessTokenWithAuthCode', E_DEPRECATED);
-
     return $this->fetchAccessTokenWithAuthCode($code);
   }
 
@@ -187,8 +187,6 @@ class Google_Client
    */
   public function refreshTokenWithAssertion()
   {
-    trigger_error('use Google_Client::fetchAccessTokenWithAssertion', E_DEPRECATED);
-
     return $this->fetchAccessTokenWithAssertion();
   }
 
@@ -233,8 +231,6 @@ class Google_Client
    */
   public function refreshToken($refreshToken)
   {
-    trigger_error('use Google_Client::fetchAccessTokenWithRefreshToken', E_DEPRECATED);
-
     return $this->fetchAccessTokenWithRefreshToken($refreshToken);
   }
 
@@ -344,12 +340,25 @@ class Google_Client
     //   3b. If access token exists but is expired, try to refresh it
     if ($this->config->get('use_application_default_credentials')) {
       $scopes = $this->prepareScopes();
-      $subscriber = ApplicationDefaultCredentials::getFetcher(
-          $scopes,
-          $authHttp,
-          array(),
-          $this->cache
-      );
+      if ($sub = $this->config->get('subject')) {
+        // for service account domain-wide authority (impersonating a user)
+        // @see https://developers.google.com/identity/protocols/OAuth2ServiceAccount
+        if (!$creds = CredentialsLoader::fromEnv($scopes)) {
+          $creds = CredentialsLoader::fromWellKnownFile($scopes);
+        }
+        if (!$creds instanceof ServiceAccountCredentials) {
+          throw new DomainException('domain-wide authority requires service account credentials');
+        }
+        $creds->setSub($sub);
+        $subscriber = new AuthTokenFetcher($creds, array(), $this->cache, $authHttp);
+      } else {
+        $subscriber = ApplicationDefaultCredentials::getFetcher(
+            $scopes,
+            $authHttp,
+            array(),
+            $this->cache
+        );
+      }
       $authIdentifier = 'google_auth';
     } elseif ($key = $this->config->get('developer_key')) {
       // if a developer key is set, authorize using that
@@ -358,21 +367,19 @@ class Google_Client
     } elseif ($token = $this->getAccessToken()) {
       $scopes = $this->prepareScopes();
       // add refresh subscriber to request a new token
-      if ($this->isAccessTokenExpired()) {
-        if (isset($token['refresh_token'])) {
-          $subscriber = $this->createUserRefreshCredentials(
-              $scopes,
-              $token['refresh_token'],
-              $authHttp
-          );
-          $authIdentifier = 'google_auth';
-        }
+      if ($this->isAccessTokenExpired() && isset($token['refresh_token'])) {
+        $subscriber = $this->createUserRefreshCredentials(
+            $scopes,
+            $token['refresh_token'],
+            $authHttp
+        );
+        $authIdentifier = 'google_auth';
       } else {
         $subscriber = new ScopedAccessToken(
             function ($scopes) use ($token) {
               return $token['access_token'];
             },
-            $scopes,
+            (array) $scopes,
             []
         );
         $authIdentifier = 'scoped';
@@ -442,6 +449,13 @@ class Google_Client
   public function getAccessToken()
   {
     return $this->token;
+  }
+
+  public function getRefreshToken()
+  {
+    if (isset($this->token['refresh_token'])) {
+      return $this->token['refresh_token'];
+    }
   }
 
   /**
@@ -811,16 +825,14 @@ class Google_Client
   }
 
   /**
-   * Set the auth config from the JSON file in the path
-   * provided. This should match the file downloaded from
-   * the "Download JSON" button on in the Google Developer
-   * Console.
-   * @param string $file the file location of the client json
+   * For backwards compatibility
+   * alias for setAuthConfig
+   *
+   * @param string $file the configuration file
+   * @throws Google_Exception
    */
   public function setAuthConfigFile($file)
   {
-    trigger_error('use Google_Client::setAuthConfig', E_USER_DEPRECATED);
-
     $this->setAuthConfig($file);
   }
 
@@ -855,7 +867,6 @@ class Google_Client
       $tmpFile = tempnam(sys_get_temp_dir(), 'appcreds');
       file_put_contents($tmpFile, json_encode($config));
       putenv('GOOGLE_APPLICATION_CREDENTIALS='.$tmpFile);
-
     } elseif (isset($config[$key])) {
       // old-style
       $this->setClientId($config[$key]['client_id']);
@@ -871,6 +882,16 @@ class Google_Client
         $this->setRedirectUri($config['redirect_uris'][0]);
       }
     }
+  }
+
+  /**
+   * Use when the service account has been delegated domain wide access.
+   *
+   * @param string subject an email address account to impersonate
+   */
+  public function setSubject($subject)
+  {
+    $this->config->set('subject', $subject);
   }
 
   /**
@@ -1036,7 +1057,7 @@ class Google_Client
         new UserRefreshCredentials($scope, $creds),
         [],
         $this->getCache(),
-        $httpClient
+        $http
     );
   }
 }
