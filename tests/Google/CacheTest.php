@@ -18,12 +18,16 @@
  * under the License.
  */
 
+use Psr\Log\LoggerInterface;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler as MonologStreamHandler;
+
 class Google_CacheTest extends BaseTest
 {
   public function testFile()
   {
     $dir = sys_get_temp_dir() . '/google-api-php-client/tests';
-    $cache = new Google_Cache_File($dir);
+    $cache = new Google_Cache_File($dir, $this->getLogger());
     $cache->set('foo', 'bar');
     $this->assertEquals($cache->get('foo'), 'bar');
 
@@ -127,5 +131,13 @@ class Google_CacheTest extends BaseTest
     $obj->foo = 'bar';
     $cache->set('foo', $obj);
     $this->assertEquals($cache->get('foo'), $obj);
+  }
+
+  private function getLogger()
+  {
+    $logger = new Logger('google-api-php-client');
+    $logger->pushHandler(new MonologStreamHandler('php://stdout', Logger::DEBUG));
+
+    return $logger;
   }
 }
